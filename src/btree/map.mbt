@@ -455,7 +455,7 @@ pub fn[K : Compare, V] op_set(self : T[K, V], key : K, value : V) -> Unit {
 ///|
 /// Equality comparison: two maps are equal iff their ordered
 /// `to_array()` representations are equal.
-pub impl[K : Eq, V : Eq] Eq for T[K, V] with op_equal(self, other) {
+pub impl[K : Eq, V : Eq] Eq for T[K, V] with equal(self, other) {
   self.to_array() == other.to_array()
 }
 
