@@ -158,7 +158,7 @@ test "remove3" {
 
 ///|
 test "remove on empty map" {
-  let map : T[Int, String] = new()
+  let map : T[Int, String] = T::new()
   map.remove(1)
   inspect(map.size(), content="0")
 }
@@ -232,7 +232,7 @@ test "op_equal" {
 
 ///|
 test "is_empty" {
-  let map : T[Int, String] = new()
+  let map : T[Int, String] = T::new()
   inspect(map.is_empty(), content="true")
   map[1] = "a"
   inspect(map.is_empty(), content="false")
@@ -348,7 +348,7 @@ test "iter2" {
 }
 
 ///|
-test "iter" {
+test "iter for loop" {
   let map = from_array([(3, "c"), (2, "b"), (1, "a")])
   let buf = StringBuilder::new()
   for kv in map {
