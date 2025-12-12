@@ -2,9 +2,6 @@
 const B : Int = 16
 
 ///|
-pub fnalias T::new
-
-///|
 /// Creates a new, empty **BTreeMap**.
 ///
 /// Returns a map with `size() == 0` and `root == None`.
@@ -72,7 +69,7 @@ pub fn[K : Compare, V] from_array(arr : Array[(K, V)]) -> T[K, V] {
 ///   let m : @btree.T[Int, String] = @btree.new()
 ///   inspect(m.is_empty(), content="true")
 /// ```
-pub fn[K, V] is_empty(self : T[K, V]) -> Bool {
+pub fn[K, V] T::is_empty(self : Self[K, V]) -> Bool {
   self.size == 0
 }
 
@@ -155,11 +152,11 @@ fn[K, V] split_child(parent : Node[K, V], idx : Int) -> Unit {
   let child = parent.children[idx]
   let median = child.keys[B - 1]
   let sibling = Node::new()
-  let (_left, right) = child.keys.split_at(B)
+  let (_left, right) = (child.keys[:B], child.keys[B:])
   sibling.keys.append(right)
   child.keys.truncate(B - 1)
   if !child.is_leaf() {
-    let (_l, right_child) = child.children.split_at(B)
+    let (_l, right_child) = (child.children[:B], child.children[B:])
     sibling.children.append(right_child)
     child.children.truncate(B)
   }
@@ -236,7 +233,7 @@ pub fn[K : Compare, V] T::add(self : Self[K, V], key : K, value : V) -> Unit {
 }
 
 ///|
-fn[K : Compare + Show, V] to_string_pretty_recursive(
+fn[K : Show, V] to_string_pretty_recursive(
   node : Node[K, V],
   prefix : String,
   is_tail : Bool,
@@ -286,7 +283,7 @@ fn[K : Compare + Show, V] to_string_pretty_recursive(
 ///           ├── [85]
 ///           └── [95, 100]
 /// ```
-pub fn[K : Compare + Show, V] T::to_string_pretty(self : Self[K, V]) -> String {
+pub fn[K : Show, V] T::to_string_pretty(self : Self[K, V]) -> String {
   match self.root {
     None => "BTree(size=0) <empty>".to_string()
     Some(root_node) => {
@@ -448,7 +445,7 @@ pub fn[K : Compare, V] T::remove(self : Self[K, V], key : K) -> Unit {
 ///   m[42] = "Meaning of life"
 ///   inspect(m.get(42), content="Some(\"Meaning of life\")")
 /// ```
-pub fn[K : Compare, V] op_set(self : T[K, V], key : K, value : V) -> Unit {
+pub fn[K : Compare, V] T::op_set(self : Self[K, V], key : K, value : V) -> Unit {
   self.add(key, value)
 }
 
@@ -477,7 +474,10 @@ pub impl[K : Eq, V : Eq] Eq for T[K, V] with equal(self, other) {
 ///     #|
 ///   ))
 /// ```
-pub fn[K, V] each(self : T[K, V], f : (K, V) -> Unit raise?) -> Unit raise? {
+pub fn[K, V] T::each(
+  self : Self[K, V],
+  f : (K, V) -> Unit raise?,
+) -> Unit raise? {
   fn dfs(n : Node[K, V]?, f : (K, V) -> Unit raise?) -> Unit raise? {
     match n {
       None => ()
@@ -510,8 +510,8 @@ pub fn[K, V] each(self : T[K, V], f : (K, V) -> Unit raise?) -> Unit raise? {
 ///     .eachi((i, k, _v) => idxs.push((i,k)))
 ///   inspect(idxs, content="[(0, 1), (1, 2)]")
 /// ```
-pub fn[K, V] eachi(
-  self : T[K, V],
+pub fn[K, V] T::eachi(
+  self : Self[K, V],
   f : (Int, K, V) -> Unit raise?,
 ) -> Unit raise? {
   let mut idx = 0
@@ -532,7 +532,7 @@ pub fn[K, V] eachi(
 ///   let ks = @btree.from_array([(3,"c"),(1,"a")]).keys()
 ///   inspect(ks, content="[1, 3]")
 /// ```
-pub fn[K, V] keys(self : T[K, V]) -> Array[K] {
+pub fn[K, V] T::keys(self : Self[K, V]) -> Array[K] {
   let ks = Array::new(capacity=self.size)
   self.each((k, _v) => ks.push(k))
   ks
@@ -542,7 +542,7 @@ pub fn[K, V] keys(self : T[K, V]) -> Array[K] {
 /// Collects all **values** into a new array, preserving key order.
 ///
 /// Complexity: `O(n)`.
-pub fn[K, V] values(self : T[K, V]) -> Array[V] {
+pub fn[K, V] T::values(self : Self[K, V]) -> Array[V] {
   let vs = Array::new(capacity=self.size)
   self.each((_k, v) => vs.push(v))
   vs
@@ -553,7 +553,7 @@ pub fn[K, V] values(self : T[K, V]) -> Array[V] {
 /// ascending key order.
 ///
 /// Complexity: `O(n)`.
-pub fn[K, V] to_array(self : T[K, V]) -> Array[(K, V)] {
+pub fn[K, V] T::to_array(self : Self[K, V]) -> Array[(K, V)] {
   let arr = Array::new(capacity=self.size)
   self.each((k, v) => arr.push((k, v)))
   arr
@@ -572,7 +572,7 @@ pub fn[K, V] to_array(self : T[K, V]) -> Array[(K, V)] {
 ///   let arr = m.iter().to_array()
 ///   inspect(arr, content="[(1, \"a\"), (2, \"b\")]")
 /// ```
-pub fn[K, V] iter(self : T[K, V]) -> Iter[(K, V)] {
+pub fn[K, V] T::iter(self : Self[K, V]) -> Iter[(K, V)] {
   Iter::new(yield_ => {
     fn go(n : Node[K, V]?, y : ((K, V)) -> IterResult) -> IterResult {
       match n {
@@ -605,7 +605,7 @@ pub fn[K, V] iter(self : T[K, V]) -> Iter[(K, V)] {
 /// instead of a tuple.
 ///
 /// Useful when working with APIs that expect two separate arguments.
-pub fn[K, V] iter2(self : T[K, V]) -> Iter2[K, V] {
+pub fn[K, V] T::iter2(self : Self[K, V]) -> Iter2[K, V] {
   Iter2::new(yield_ => {
     fn go(n : Node[K, V]?, y : (K, V) -> IterResult) -> IterResult {
       match n {
@@ -646,7 +646,7 @@ pub fn[K, V] iter2(self : T[K, V]) -> Iter2[K, V] {
 ///   inspect(m.size(), content="2")
 /// ```
 pub fn[K : Compare, V] from_iter(iter : Iter[(K, V)]) -> T[K, V] {
-  let m = new()
+  let m = T::new()
   iter.each(p => m.add(p.0, p.1))
   m
 }
@@ -669,7 +669,11 @@ pub fn[K : Compare, V] from_iter(iter : Iter[(K, V)]) -> T[K, V] {
 ///   m.range(2,3).each((k,v)=>sub.push((k,v)))
 ///   inspect(sub, content="[(2, \"b\"), (3, \"c\")]")
 /// ```
-pub fn[K : Compare, V] range(self : T[K, V], low : K, high : K) -> Iter2[K, V] {
+pub fn[K : Compare, V] T::range(
+  self : Self[K, V],
+  low : K,
+  high : K,
+) -> Iter2[K, V] {
   Iter2::new(yield_ => {
     fn go(
       n : Node[K, V]?,
@@ -735,5 +739,5 @@ pub impl[K : Show, V : Show] Show for T[K, V] with output(self, logger) {
 ///|
 /// Returns the **default** empty map.
 pub impl[K, V] Default for T[K, V] with default() {
-  new()
+  T::new()
 }
